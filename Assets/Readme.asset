@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcf7219bab7fe46a1ad266029b2fee19, type: 3}
+  m_Name: Readme
+  m_EditorClassIdentifier: 
+  icon: {fileID: 2800000, guid: 44a17a5b205fcd349a24700e6f5615bd, type: 3}
+  title: Development Guide
+  sections:
+  - heading: Realm World
+    text: Fun, Simple, Open To Play And Develop That Is Our Priority In Order
+    linkText: 
+    url: 
+  - heading: World Generation
+    text: The World Generation code is very simple and modular so you can use the
+      code your self!
+    linkText: 
+    url: 
+  - heading: 
+    text: All the world generation stuff is in <b>Assets/Environment/World</b>
+    linkText: 
+    url: 
+  - heading: 
+    text: Read the <b>World/README</b> to see independents of each folder
+    linkText: 
+    url: 
+  - heading: 
+    text: Currently you just need to edit <b>TerrainChunk.cs</b> to change how it
+      generate itself
+    linkText: 
+    url: 
+  - heading: We want to hear your feedback
+    text: 
+    linkText: 
+    url: 
+  - heading: Repository
+    text: 
+    linkText: 
+    url: https://github.com/Romelianism/Realm-World
+  loadedLayout: 1
