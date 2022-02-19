@@ -56,6 +56,9 @@ public class TerrainChunk : MonoBehaviour
     }
     void OnValidate()
     {
-        GenerateHeightmap();
+        if (terrainData != null)
+        {
+            GenerateHeightmap();
+        }
     }
 }
