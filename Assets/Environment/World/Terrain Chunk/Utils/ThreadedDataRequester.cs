@@ -8,7 +8,7 @@ using UnityEngine;
 //Modified from https://github.com/SebLague/Procedural-Landmass-Generation/blob/master/Proc%20Gen%20E21/Assets/Scripts/ThreadedDataRequester.cs
 public class ThreadedDataRequester : MonoBehaviour
 {
-    static ThreadedDataRequester global;
+    public static ThreadedDataRequester global;
     readonly Queue<ThreadInfo> dataQueue = new Queue<ThreadInfo>();
     readonly Queue<Action> requestQueue = new Queue<Action>();
     public int maxQueue = int.MaxValue;
