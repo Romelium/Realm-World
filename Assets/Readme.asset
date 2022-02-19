@@ -43,6 +43,6 @@ MonoBehaviour:
     url: 
   - heading: Repository
     text: 
-    linkText: 
+    linkText: https://github.com/Romelianism/Realm-World
     url: https://github.com/Romelianism/Realm-World
   loadedLayout: 1
