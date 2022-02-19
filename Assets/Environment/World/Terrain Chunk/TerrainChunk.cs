@@ -8,29 +8,46 @@ public class TerrainChunk : MonoBehaviour
     public int octaves = 5;
     public float persistance = 0.5f;
     public float lacunarity = 2f;
+    private TerrainData terrainData;
 
     // Start is called before the first frame update
     void Start()
     {
         var terrain = gameObject.GetComponent<Terrain>();
-        var terrainData = TerrainDataCloner.Clone(terrain.terrainData);
+        terrainData = TerrainDataCloner.Clone(terrain.terrainData);
+        GenerateHeightmap();
 
-        var heightmap = new float[terrainData.heightmapResolution, terrainData.heightmapResolution];
-        var coord = new float2(transform.position.x / terrainData.size.x, transform.position.z / terrainData.size.z).yx;
-        var offset = coord * terrainData.heightmapResolution - coord;
+        terrain.terrainData = terrainData;
+        gameObject.GetComponent<TerrainCollider>().terrainData = terrainData;
+    }
 
-        for (int x = 0; x < terrainData.heightmapResolution; x++)
+    private void GenerateHeightmap()
+    {
+        var position = transform.position;
+        var size = terrainData.size;
+        var heightmapResolution = terrainData.heightmapResolution;
+        ThreadedDataRequester.RequestData(() =>
         {
-            for (int y = 0; y < terrainData.heightmapResolution; y++)
+            float[,] heightmap = MakeHeightmap(position, size, heightmapResolution);
+            return heightmap;
+        },
+        (heightmap) => terrainData.SetHeights(0, 0, (float[,])heightmap)
+        );
+    }
+    private float[,] MakeHeightmap(Vector3 position, Vector3 size, int heightmapResolution)
+    {
+        var heightmap = new float[heightmapResolution, heightmapResolution];
+        var coord = new float2(position.x / size.x, position.z / size.z).yx;
+        var offset = coord * heightmapResolution - coord;
+        for (int x = 0; x < heightmapResolution; x++)
+        {
+            for (int y = 0; y < heightmapResolution; y++)
             {
                 heightmap[x, y] = Noise.SimplexNoise_EX(new float2(x, y) + offset, scale, octaves, persistance, lacunarity);
             }
         }
 
-        terrainData.SetHeights(0, 0, heightmap);
-
-        terrain.terrainData = terrainData;
-        gameObject.GetComponent<TerrainCollider>().terrainData = terrainData;
+        return heightmap;
     }
     // Update is called once per frame
     void Update()
