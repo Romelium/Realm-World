@@ -59,9 +59,12 @@ public class ChunkLoader : MonoBehaviour
                 {
                     Chunk chunk;
                     if (chunkObject == null)
-                        chunk = Chunk.Create(parent, coord, chunkSettings.size);
+                    {
+                        Debug.LogWarning("ChunkObject is Empty");
+                        chunk = Chunk.Wrap(new GameObject("chunkObject Empty"), parent, coord, chunkSettings.size, true);
+                    }
                     else
-                        chunk = Chunk.CreateWrapInstantiate(chunkObject, parent, coord, chunkSettings.size);
+                        chunk = Chunk.InstantiateWrap(chunkObject, parent, coord, chunkSettings.size);
                     chunks.Add(coord, chunk);
                     visibleChunks.Add(chunk);
                 }

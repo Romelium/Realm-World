@@ -10,40 +10,24 @@ public class Chunk : MonoBehaviour
     [SerializeField]
     private bool visible;
     /// <summary>
-    /// Create a new chunk
+    /// Make gameObject to be at chunk world position
     /// </summary>
-    public static Chunk Create(Transform parent, Vector2Int coord, Vector3 size)
+    public static Chunk Wrap(GameObject gameObject, Transform parent, Vector2Int coord, Vector3 size, bool keepName = false)
     {
-        var chunkObject = new GameObject(coord.ToString());
-        chunkObject.transform.parent = parent;
-        chunkObject.transform.localPosition = new Vector3(coord.x * size.x, 0, coord.y * size.y);
+        gameObject.transform.parent = parent;
+        gameObject.transform.localPosition = new Vector3(coord.x * size.x, 0, coord.y * size.y);
 
-        var chunk = chunkObject.AddComponent<Chunk>();
+        var chunk = gameObject.AddComponent<Chunk>();
         chunk.coord = coord;
+        gameObject.name = coord + (keepName ? ":" + gameObject.name : "");
         return chunk;
     }
     /// <summary>
-    /// Set parent of gameObject as chunk and add position to gameObject
+    /// instantiate gameObject gameObject to be at chunk world position 
     /// </summary>
-    public Chunk Wrap(GameObject gameObject)
+    public static Chunk InstantiateWrap(GameObject gameObject, Transform parent, Vector2Int coord, Vector3 size, bool keepName = false)
     {
-        gameObject.transform.parent = transform;
-        gameObject.transform.position += transform.position;
-        return this;
-    }
-    /// <summary>
-    /// Create and Wrap
-    /// </summary>
-    public static Chunk CreateWrap(GameObject gameObject, Transform parent, Vector2Int coord, Vector3 size)
-    {
-        return Create(parent, coord, size).Wrap(gameObject);
-    }
-    /// <summary>
-    /// Create and Wrap the instantiate gameObject
-    /// </summary>
-    public static Chunk CreateWrapInstantiate(GameObject gameObject, Transform parent, Vector2Int coord, Vector3 size)
-    {
-        return CreateWrap(Instantiate(gameObject), parent, coord, size);
+        return Wrap(Instantiate(gameObject), parent, coord, size, keepName);
     }
 
     private void setVisible(bool value)
