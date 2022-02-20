@@ -91,9 +91,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scale: 0.001
-  octaves: 25
+  octaves: 10
   persistance: 0.5
   lacunarity: 2
+  treePlanter:
+    lockWidthToHeight: 1
+    randomRotation: 1
+    allowHeightVar: 1
+    allowWidthVar: 1
+    numberOfTrees: 1000
+    heightCutOff: 0.2
+    treeColorAdjustment: 0.4
+    treeHeight: 1
+    treeHeightVariation: 0.1
+    treeWidth: 1
+    treeWidthVariation: 0.1
+    allowedSteepness: 0.5
   splatSettings:
   - baseStrength: 1
     heightSettings:
