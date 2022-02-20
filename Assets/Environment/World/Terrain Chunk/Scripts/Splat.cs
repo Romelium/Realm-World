@@ -1,3 +1,4 @@
+using Array2DExtensions;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -29,13 +30,13 @@ public static class Splat
             for (int x = 0; x < splatmapResolution; x++)
             {
                 // splatmapResolution x/y coordinates to heightMap range by linear conversion
-                var heightMap_x = x * (heightmapResolution) / splatmapResolution;
-                var heightMap_y = y * (heightmapResolution) / splatmapResolution;
+                // NOTE: x = y, y = x. what the f...? 
+                var heightMap_x = y * (heightmapResolution) / splatmapResolution;
+                var heightMap_y = x * (heightmapResolution) / splatmapResolution;
 
                 // get height and slope at corresponding point
-                // NOTE: x = y, y = x. what the f...? 
                 float height = heightMap[heightMap_x, heightMap_y];
-                float slope = GetSteepness(heightMap, heightMap_y - y / splatmapResolution, heightMap_x - x / splatmapResolution, heightScale);
+                float slope = heightMap.GetSteepness(heightMap_y - y / splatmapResolution, heightMap_x - x / splatmapResolution, heightScale);
 
                 // The point sum of all layers weight to be used in noramlizing later
                 var sum = 0f;
@@ -79,16 +80,6 @@ public static class Splat
             }
         }
         return splatmapWeights;
-    }
-    // From https://gamedev.stackexchange.com/a/89826
-    static float GetSteepness(float[,] heightmap, int x, int y, float scale = 1)
-    {
-        float height = heightmap[x, y] * scale;
-
-        float dx = heightmap[x + 1, y] * scale - height;
-        float dy = heightmap[x, y + 1] * scale - height;
-
-        return 1 / (dx * dx + 1 + dy * dy);
     }
 }
 /// <summary>
