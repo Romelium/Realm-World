@@ -10,6 +10,9 @@ public class Heightmap
     public float persistance = 0.5f;
     public float lacunarity = 2f;
 
+    public int additionalOctaves = 1;
+    public float octavesOffset = 1000f;
+
     public float[,] Generate(int heightmapResolution, Vector3 position, Vector3 size)
     {
         var heightmap = new float[heightmapResolution, heightmapResolution];
@@ -19,7 +22,7 @@ public class Heightmap
         {
             for (int y = 0; y < heightmapResolution; y++)
             {
-                heightmap[x, y] = Noise.SimplexNoise_EX(new float2(x, y) + offset, scale, octaves, persistance, lacunarity);
+                heightmap[x, y] = Noise.SimplexNoise_EX(new float2(x, y) + offset, scale, octaves, persistance, lacunarity, additionalOctaves, octavesOffset);
             }
         }
 
