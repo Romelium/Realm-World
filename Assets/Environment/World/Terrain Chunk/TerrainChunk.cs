@@ -1,3 +1,4 @@
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 using ZS.Tools;
@@ -8,6 +9,7 @@ public class TerrainChunk : MonoBehaviour
     public int octaves = 5;
     public float persistance = 0.5f;
     public float lacunarity = 2f;
+    public SplatSetting[] splatSettings;
     private TerrainData terrainData;
 
     // Start is called before the first frame update
@@ -15,23 +17,39 @@ public class TerrainChunk : MonoBehaviour
     {
         var terrain = gameObject.GetComponent<Terrain>();
         terrainData = TerrainDataCloner.Clone(terrain.terrainData);
-        GenerateHeightmap();
+
+        GenerateChunk();
 
         terrain.terrainData = terrainData;
         gameObject.GetComponent<TerrainCollider>().terrainData = terrainData;
     }
 
-    private void GenerateHeightmap()
+    private void GenerateChunk()
+    {
+        GenerateHeightmap((heightmap) =>
+        {
+            terrainData.SetHeights(0, 0, heightmap);
+            GenerateSplatmap(heightmap, (splatmap) =>
+            {
+                terrainData.SetAlphamaps(0, 0, splatmap);
+            });
+        });
+    }
+
+    private void GenerateHeightmap(Action<float[,]> Callback)
     {
         var position = transform.position;
         var size = terrainData.size;
         var heightmapResolution = terrainData.heightmapResolution;
-        ThreadedDataRequester.RequestData(() =>
-        {
-            float[,] heightmap = MakeHeightmap(position, size, heightmapResolution);
-            return heightmap;
-        },
-        (heightmap) => terrainData.SetHeights(0, 0, (float[,])heightmap)
+        ThreadedDataRequester.RequestData(
+            () =>
+            {
+                // Warning everything here will be run on different thread
+                // SO THERE WILL BE NO ERRORS GOING TO SHOW UP IF SOMETHING GO WRONG
+
+                return MakeHeightmap(position, size, heightmapResolution);
+            },
+            (heightmap) => Callback((float[,])heightmap)
         );
     }
     private float[,] MakeHeightmap(Vector3 position, Vector3 size, int heightmapResolution)
@@ -49,6 +67,26 @@ public class TerrainChunk : MonoBehaviour
 
         return heightmap;
     }
+
+    private void GenerateSplatmap(float[,] heightmap, Action<float[,,]> Callback)
+    {
+        var position = transform.position;
+        var size = terrainData.size;
+        var heightmapResolution = terrainData.heightmapResolution;
+        var splatmapResolution = terrainData.alphamapResolution;
+        var terrainLayersLength = terrainData.terrainLayers.Length;
+        var heightScale = terrainData.size.y * heightmapResolution / ((terrainData.size.x + terrainData.size.z) / 2);
+        ThreadedDataRequester.RequestData(
+            () =>
+            {
+                // Warning everything here will be run on different thread
+                // SO THERE WILL BE NO ERRORS GOING TO SHOW UP IF SOMETHING GO WRONG
+
+                return Splat.GenerateSplatMap(splatSettings, heightmap, heightScale, heightmapResolution, splatmapResolution, terrainLayersLength); ;
+            },
+            (heightmap) => Callback((float[,,])heightmap)
+        );
+    }
     // Update is called once per frame
     void Update()
     {
@@ -58,7 +96,7 @@ public class TerrainChunk : MonoBehaviour
     {
         if (terrainData != null)
         {
-            GenerateHeightmap();
+            GenerateChunk();
         }
     }
 }

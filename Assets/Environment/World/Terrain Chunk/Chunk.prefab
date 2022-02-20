@@ -93,3 +93,58 @@ MonoBehaviour:
   octaves: 25
   persistance: 0.5
   lacunarity: 2
+  splatSettings:
+  - baseStrength: 1
+    heightSettings:
+      heightStrength: 1
+      heightEffect: 1
+      heightFadeSetting:
+        startFade: 0
+        startValue: 0
+        endValue: 0
+        endFade: 1
+    slopeSettings:
+      slopeStrength: 1
+      slopeEffect: 0
+      slopeFadeSetting:
+        startFade: 0
+        startValue: 0
+        endValue: 1
+        endFade: 1
+      slopeInverted: 0
+  - baseStrength: 1
+    heightSettings:
+      heightStrength: 1
+      heightEffect: 1
+      heightFadeSetting:
+        startFade: 0
+        startValue: 0.5
+        endValue: 0.75
+        endFade: 1
+    slopeSettings:
+      slopeStrength: 1
+      slopeEffect: 1
+      slopeFadeSetting:
+        startFade: 0
+        startValue: 0
+        endValue: 1
+        endFade: 1
+      slopeInverted: 0
+  - baseStrength: 1
+    heightSettings:
+      heightStrength: 1
+      heightEffect: 0
+      heightFadeSetting:
+        startFade: 0
+        startValue: 0
+        endValue: 1
+        endFade: 1
+    slopeSettings:
+      slopeStrength: 1
+      slopeEffect: 1
+      slopeFadeSetting:
+        startFade: 0
+        startValue: 0
+        endValue: 1
+        endFade: 1
+      slopeInverted: 1
