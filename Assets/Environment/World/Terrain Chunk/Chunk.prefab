@@ -90,10 +90,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d934f7604848ee740bd5775f96bdac21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  scale: 0.001
-  octaves: 10
-  persistance: 0.5
-  lacunarity: 2
+  heightmapSetting:
+    scale: 0.001
+    octaves: 10
+    persistance: 0.5
+    lacunarity: 2
   treePlanter:
     lockWidthToHeight: 1
     randomRotation: 1

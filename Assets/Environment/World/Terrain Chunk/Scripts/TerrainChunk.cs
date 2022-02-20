@@ -5,10 +5,7 @@ using ZS.Tools;
 
 public class TerrainChunk : MonoBehaviour
 {
-    public float scale = 0.002f;
-    public int octaves = 5;
-    public float persistance = 0.5f;
-    public float lacunarity = 2f;
+    public Heightmap heightmapSetting;
     public TreePlanter treePlanter;
     public SplatSetting[] splatSettings;
     private TerrainData terrainData;
@@ -53,27 +50,11 @@ public class TerrainChunk : MonoBehaviour
                 // Warning everything here will be run on different thread
                 // SO THERE WILL BE A HIGH CHANCE NO ERRORS GOING TO SHOW UP IF SOMETHING GO WRONG
 
-                return MakeHeightmap(position, size, heightmapResolution);
+                return heightmapSetting.Generate(heightmapResolution, position, size);
             },
             (heightmap) => Callback((float[,])heightmap)
         );
     }
-    private float[,] MakeHeightmap(Vector3 position, Vector3 size, int heightmapResolution)
-    {
-        var heightmap = new float[heightmapResolution, heightmapResolution];
-        var coord = new float2(position.x / size.x, position.z / size.z).yx;
-        var offset = coord * heightmapResolution - coord;
-        for (int x = 0; x < heightmapResolution; x++)
-        {
-            for (int y = 0; y < heightmapResolution; y++)
-            {
-                heightmap[x, y] = Noise.SimplexNoise_EX(new float2(x, y) + offset, scale, octaves, persistance, lacunarity);
-            }
-        }
-
-        return heightmap;
-    }
-
     private void GenerateSplatmap(float[,] heightmap, Action<float[,,]> Callback)
     {
         var position = transform.position;
@@ -106,7 +87,7 @@ public class TerrainChunk : MonoBehaviour
                 // Warning everything here will be run on different thread
                 // SO THERE WILL BE A HIGH CHANCE NO ERRORS GOING TO SHOW UP IF SOMETHING GO WRONG
 
-                return treePlanter.TreeInstances(heightmap, heightmapResolution, treePrototypesLength, size, rng_01); ;
+                return treePlanter.GenerateInstances(heightmap, heightmapResolution, treePrototypesLength, size, rng_01); ;
             },
             (treeInstances) => Callback((TreeInstance[])treeInstances)
         );
