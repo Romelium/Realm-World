@@ -17,7 +17,7 @@ public class TreePlanter
     public float treeWidthVariation = .1f;
     public float allowedSteepness = 0.5f;
 
-    public TreeInstance[] TreeInstances(float[,] heightMap, int heightmapResolution, float treePrototypesLength, Vector3 size, Func<float> rng_01)
+    public TreeInstance[] GenerateInstances(float[,] heightMap, int heightmapResolution, float treePrototypesLength, Vector3 size, Func<float> rng_01)
     {
         if (treePrototypesLength == 0)
         {
