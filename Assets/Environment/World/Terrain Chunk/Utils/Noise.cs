@@ -152,7 +152,7 @@ public static class Noise
         // The maximum value of this noise is 8*(3/4)^4 = 2.53125
         // A factor of 0.395 would scale to fit exactly within [-1,1], but
         // we want to match PRMan's 1D noise, so we scale it down some more.
-        return 0.25f * (n0 + n1);
+        return 0.125f * (n0 + n1) + 0.5f; // change range to [0,1]
     }
 
 
@@ -225,7 +225,7 @@ public static class Noise
 
         // Add contributions from each corner to get the final noise value.
         // The result is scaled to return values in the interval [-1,1]
-        return 40.0f / 0.884343445f * (n0 + n1 + n2);   //accurate to e-9 so that values scale to [-1, 1], same acc as F2 G2.
+        return 40.0f / 0.884343445f * 0.5f * (n0 + n1 + n2) + 0.5f;   //accurate to e-9 so that values scale to [0, 1], same acc as F2 G2. // change range to [0,1]
     }
 
 
@@ -332,7 +332,7 @@ public static class Noise
 
         // Add contributions from each corner to get the final noise value.
         // The result is scaled to stay just inside [-1,1]
-        return 32.0f * (n0 + n1 + n2 + n3); // TODO: The scale factor is preliminary!
+        return 16f * (n0 + n1 + n2 + n3) + 0.5f; // TODO: The scale factor is preliminary! // change range to [0,1]
     }
 
 
@@ -472,7 +472,7 @@ public static class Noise
         }
 
         // Sum up and scale the result to cover the range [-1,1]
-        return 27.0f * (n0 + n1 + n2 + n3 + n4);
+        return 13.5f * (n0 + n1 + n2 + n3 + n4) + 0.5f; // change range to [0,1]
     }
     // 1D Simplex Noise
 
@@ -510,115 +510,122 @@ public static class Noise
 
     public static float SimplexNoiseInRange(float position, float scale, float rangeMin, float rangeMax)
     {
-        if (rangeMax < rangeMin) rangeMax = rangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
-        float nval = (SimplexNoise(position, scale) + 1) * 0.5f;
-        return nval * (rangeMax - rangeMin) + rangeMin;
+        return SimplexNoise(position, scale) * (rangeMax - rangeMin) + rangeMin;
     }
 
 
     public static float SimplexNoiseInRange(float2 position, float scale, float rangeMin, float rangeMax)
     {
-        if (rangeMax < rangeMin) rangeMax = rangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
-        float nval = (SimplexNoise(position, scale) + 1) * 0.5f;
-        return nval * (rangeMax - rangeMin) + rangeMin;
+        return SimplexNoise(position, scale) * (rangeMax - rangeMin) + rangeMin;
     }
 
 
     public static float SimplexNoiseInRange(float3 position, float scale, float rangeMin, float rangeMax)
     {
-        if (rangeMax < rangeMin) rangeMax = rangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
-        float nval = (SimplexNoise(position, scale) + 1) * 0.5f;
-        return nval * (rangeMax - rangeMin) + rangeMin;
+        return SimplexNoise(position, scale) * (rangeMax - rangeMin) + rangeMin;
     }
 
 
     public static float SimplexNoiseInRange(float4 position, float scale, float rangeMin, float rangeMax)
     {
-        if (rangeMax < rangeMin) rangeMax = rangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
-        float nval = (SimplexNoise(position, scale) + 1) * 0.5f;
-        return nval * (rangeMax - rangeMin) + rangeMin;
+        return SimplexNoise(position, scale) * (rangeMax - rangeMin) + rangeMin;
     }
 
     // Get 1D Simplex Noise ( with lacunarity, persistance, octaves )
-    public static float SimplexNoise_EX(float position, float scale = 1f, int octaves = 5, float persistance = 0.5f, float lacunarity = 2f, bool ZeroToOne = true)
+    public static float SimplexNoise_EX(float position, float scale = 1f, int octaves = 5, float persistance = 0.5f, float lacunarity = 2f, int additionalOctaves = 1, float octavesOffset = 1000f)
     {
         float frequency = 1.0f * scale;
         float amplitude = 1.0f;
         float sum = 0.0f;
         float max = 0f;
-
         for (int i = 0; i < octaves; i++)
         {
-            sum += _simplexNoise(position * frequency) * amplitude;
+            float mul = 1.0f;
+            for (int j = 0; j < additionalOctaves; j++)
+            {
+                mul *= _simplexNoise((position + perm[(i + j * additionalOctaves) % 512] * octavesOffset) * frequency);
+            }
+            sum += mul * amplitude;
+            max += amplitude;
             frequency *= lacunarity;
             amplitude *= persistance;
         }
-        sum /= max; // normalize
 
-        return ZeroToOne ? sum * 0.5f + 0.5f : sum;
+        return sum / max; // normalize
     }
 
 
 
     // Get 2D Simplex Noise ( with lacunarity, persistance, octaves )
 
-    public static float SimplexNoise_EX(float2 position, float scale = 1f, int octaves = 5, float persistance = 0.5f, float lacunarity = 2f, bool ZeroToOne = true)
+    public static float SimplexNoise_EX(float2 position, float scale = 1f, int octaves = 5, float persistance = 0.5f, float lacunarity = 2f, int additionalOctaves = 1, float octavesOffset = 1000f)
     {
         float frequency = 1.0f * scale;
         float amplitude = 1.0f;
         float sum = 0.0f;
         float max = 0f;
-
         for (int i = 0; i < octaves; i++)
         {
-            sum += _simplexNoise(position * frequency) * amplitude;
+            float mul = 1.0f;
+            for (int j = 0; j < additionalOctaves; j++)
+            {
+                mul *= _simplexNoise((position + perm[(i + j * additionalOctaves) % 512] * octavesOffset) * frequency);
+            }
+            sum += mul * amplitude;
             max += amplitude;
             frequency *= lacunarity;
             amplitude *= persistance;
         }
-        sum /= max; // normalize
 
-        return ZeroToOne ? sum * 0.5f + 0.5f : sum;
+        return sum / max; // normalize
     }
 
     // Get 3D Simplex Noise ( with lacunarity, persistance, octaves )
-    public static float SimplexNoise_EX(float3 position, float scale = 1f, int octaves = 5, float persistance = 0.5f, float lacunarity = 2f, bool ZeroToOne = true)
+    public static float SimplexNoise_EX(float3 position, float scale = 1f, int octaves = 5, float persistance = 0.5f, float lacunarity = 2f, int additionalOctaves = 1, float octavesOffset = 1000f)
     {
         float frequency = 1.0f * scale;
         float amplitude = 1.0f;
         float sum = 0.0f;
         float max = 0f;
-
-        for (int i = 0; i <= octaves; i++)
+        for (int i = 0; i < octaves; i++)
         {
-            sum += _simplexNoise(position * frequency) * amplitude;
+            float mul = 1.0f;
+            for (int j = 0; j < additionalOctaves; j++)
+            {
+                mul *= _simplexNoise((position + perm[(i + j * additionalOctaves) % 512] * octavesOffset) * frequency);
+            }
+            sum += mul * amplitude;
+            max += amplitude;
             frequency *= lacunarity;
             amplitude *= persistance;
         }
-        sum /= max; // normalize
 
-        return ZeroToOne ? sum * 0.5f + 0.5f : sum;
+        return sum / max; // normalize
     }
 
 
 
 
     // Get Get 4D Simplex Noise ( with lacunarity, persistance, octaves )
-    public static float SimplexNoise_EX(float4 position, float scale = 1f, int octaves = 5, float persistance = 0.5f, float lacunarity = 2f, bool ZeroToOne = true)
+    public static float SimplexNoise_EX(float4 position, float scale = 1f, int octaves = 5, float persistance = 0.5f, float lacunarity = 2f, int additionalOctaves = 1, float octavesOffset = 1000f)
     {
         float frequency = 1.0f * scale;
         float amplitude = 1.0f;
         float sum = 0.0f;
         float max = 0f;
-
         for (int i = 0; i < octaves; i++)
         {
-            sum += _simplexNoise(position * frequency) * amplitude;
+            float mul = 1.0f;
+            for (int j = 0; j < additionalOctaves; j++)
+            {
+                mul *= _simplexNoise((position + perm[(i + j * additionalOctaves) % 512] * octavesOffset) * frequency);
+            }
+            sum += mul * amplitude;
+            max += amplitude;
             frequency *= lacunarity;
             amplitude *= persistance;
         }
-        sum /= max; // normalize
 
-        return ZeroToOne ? sum * 0.5f + 0.5f : sum;
+        return sum / max; // normalize
     }
 }
