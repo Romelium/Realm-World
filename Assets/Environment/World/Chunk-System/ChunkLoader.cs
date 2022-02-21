@@ -99,6 +99,7 @@ public class ChunkLoader : MonoBehaviour
     {
         if (Application.isPlaying)
         {
+            Awake();
             Start();
         }
     }
