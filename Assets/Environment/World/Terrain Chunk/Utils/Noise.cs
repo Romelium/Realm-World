@@ -8,14 +8,17 @@ using EnumerableExtensions;
 public static class Noise
 {
     // Remove if it is too hard to convert to other languages just remove it
-    // Just a helper function to set the seed
-    public static void PermuteTable(int seed, Func<int, int> rng)
+    // Just a helper function to set the seedug.Log(Noise.perm.Average(d => d));
+    public static void PermuteTable(Func<int> rng)
     {
-        seed = rng(seed);
+        PermuteTable(() => unchecked((uint)rng()));
+    }
+    public static void PermuteTable(Func<uint> rng)
+    {
         var perm =
         Enumerable.Range(byte.MinValue, byte.MaxValue + 1)
         .Select(x => (byte)x)
-        .Shuffle((a) => rng(a ^ seed))
+        .Shuffle((a) => rng())
         .ToArray();
         perm.CopyTo(Noise.perm, 0); // first row
         perm.CopyTo(Noise.perm, Noise.perm.Length / 2); // second row

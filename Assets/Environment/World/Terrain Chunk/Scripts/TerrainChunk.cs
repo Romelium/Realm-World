@@ -1,10 +1,11 @@
 using System;
-using Unity.Mathematics;
+using StringExtensions;
 using UnityEngine;
 using ZS.Tools;
 
 public class TerrainChunk : MonoBehaviour
 {
+    public string seed = "hello world";
     public Heightmap heightmapSetting;
     public TreePlanter treePlanter;
     public SplatSetting[] splatSettings;
@@ -15,7 +16,6 @@ public class TerrainChunk : MonoBehaviour
     {
         var terrain = gameObject.GetComponent<Terrain>();
         terrainData = TerrainDataCloner.Clone(terrain.terrainData);
-        chunkSeed = Bitcast.FloatToUInt(transform.position.x) ^ Bitcast.FloatToUInt(transform.position.z);
 
         GenerateChunk();
 
@@ -25,6 +25,12 @@ public class TerrainChunk : MonoBehaviour
 
     private void GenerateChunk()
     {
+        // Seeding
+        uint seedHash = unchecked((uint)seed.GetStableHashCode());
+        var random = new Unity.Mathematics.Random(seedHash == 0 ? 1 : seedHash); // zero is not allowed!
+        Noise.PermuteTable(random.NextInt);
+        chunkSeed = Bitcast.FloatToUInt(transform.position.x) ^ Bitcast.FloatToUInt(transform.position.z) ^ seedHash;
+
         GenerateHeightmap((heightmap) =>
         {
             terrainData.SetHeights(0, 0, heightmap);
