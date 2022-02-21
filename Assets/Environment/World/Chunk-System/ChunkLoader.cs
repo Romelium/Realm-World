@@ -95,4 +95,8 @@ public class ChunkLoader : MonoBehaviour
             }
         }
     }
+    private void OnValidate()
+    {
+        Start();
+    }
 }
