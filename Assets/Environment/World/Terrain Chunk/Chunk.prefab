@@ -90,7 +90,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d934f7604848ee740bd5775f96bdac21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  seed: hello worl
+  seed: Hello World!
   heightmapSetting:
     scale: 0.001
     octaves: 10
