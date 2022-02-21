@@ -97,6 +97,9 @@ public class ChunkLoader : MonoBehaviour
     }
     private void OnValidate()
     {
-        Start();
+        if (Application.isPlaying)
+        {
+            Start();
+        }
     }
 }
