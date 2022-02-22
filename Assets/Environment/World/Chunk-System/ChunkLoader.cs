@@ -13,7 +13,8 @@ public class ChunkLoader : MonoBehaviour
     public Transform viewer;
     [HideInInspector]
     public Vector2Int viewerCoord;
-    private Dictionary<Vector2Int, Chunk> chunks = new Dictionary<Vector2Int, Chunk>();
+    [HideInInspector]
+    public Dictionary<Vector2Int, Chunk> chunks = new Dictionary<Vector2Int, Chunk>();
     private List<Chunk> visibleChunks = new List<Chunk>();
 
     [Tooltip("Editor Only")]
