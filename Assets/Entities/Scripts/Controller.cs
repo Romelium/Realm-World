@@ -1,109 +1,209 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
+
+[RequireComponent(typeof(CharacterController))]
 public class Controller : MonoBehaviour
 {
-    public float movingTurnSpeed = 360;
-    public float stationaryTurnSpeed = 180;
-    public float jumpPower = 12f;
-    public float gravityMultiplier = 2f;
-    public float moveSpeedMultiplier = 1f;
-    public float groundCheckDistance = 0.1f;
+    [Header("Player")]
+    [Tooltip("Move speed of the character in m/s")]
+    public float MoveSpeed = 2.0f;
+    [Tooltip("Sprint speed of the character in m/s")]
+    public float SprintSpeed = 5.335f;
+    [Tooltip("How fast the character turns to face movement direction")]
+    [Range(0.0f, 0.3f)]
+    public float RotationSmoothTime = 0.12f;
+    [Tooltip("Acceleration and deceleration")]
+    public float SpeedChangeRate = 10.0f;
 
-    public bool m_IsGrounded;
-    public float m_TurnAmount;
-    public float m_ForwardAmount;
-    public Vector3 m_GroundNormal;
+    [Space(10)]
+    [Tooltip("The height the player can jump")]
+    public float JumpHeight = 1.2f;
+    [Tooltip("The character uses its own gravity value. The engine default is -9.81f")]
+    public float Gravity = -15.0f;
 
-    Rigidbody m_Rigidbody;
+    [Space(10)]
+    [Tooltip("Time required to pass before being able to jump again. Set to 0f to instantly jump again")]
+    public float JumpTimeout = 0.50f;
+    [Tooltip("Time required to pass before entering the fall state. Useful for walking down stairs")]
+    public float FallTimeout = 0.15f;
 
-    void Start()
+    [Header("Player Grounded")]
+    [Tooltip("If the character is grounded or not. Not part of the CharacterController built in grounded check")]
+    public bool Grounded = true;
+    [Tooltip("Useful for rough ground")]
+    public float GroundedOffset = -0.14f;
+    [Tooltip("The radius of the grounded check. Should match the radius of the CharacterController")]
+    public float GroundedRadius = 0.28f;
+    [Tooltip("What layers the character uses as ground")]
+    public LayerMask GroundLayers;
+
+    // player
+    private float _speed;
+    private float _targetRotation = 0.0f;
+    private float _rotationVelocity;
+    private float _verticalVelocity;
+    private float _terminalVelocity = 53.0f;
+    private Vector3 _frictionVelocity;
+
+    // timeout deltatime
+    private float _jumpTimeoutDelta;
+    private float _fallTimeoutDelta;
+
+    private CharacterController _controller;
+
+    private void Start()
     {
-        m_Rigidbody = GetComponent<Rigidbody>();
+        _controller = GetComponent<CharacterController>();
 
-        m_Rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
+        // reset our timeouts on start
+        _jumpTimeoutDelta = JumpTimeout;
+        _fallTimeoutDelta = FallTimeout;
+    }
+    public void Update()
+    {
+
     }
 
-
-    public void Move(Vector3 move, bool jump)
+    public void Move(Vector3 move, bool sprint, bool jump)
     {
+        JumpAndGravity(jump);
+        GroundedCheck();
+        Movement(new Vector2(move.x, move.z), sprint);
+    }
 
-        // convert the world relative moveInput vector into a local-relative
-        // turn amount and forward amount required to head in the desired
-        // direction.
-        move.Normalize();
-        move = transform.InverseTransformDirection(move);
-        CheckGroundStatus();
-        move = Vector3.ProjectOnPlane(move, m_GroundNormal);
-        m_TurnAmount = Mathf.Atan2(move.x, move.z);
-        m_ForwardAmount = move.z;
-
-        ApplyExtraTurnRotation();
-
-        // control and velocity handling is different when grounded and airborne:
-        if (m_IsGrounded)
+    private void GroundedCheck()
+    {
+        // set sphere position, with offset
+        Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
+        var others = Physics.OverlapSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
+        if (others.Length != 0)
         {
-            HandleGroundedMovement(jump);
+            Grounded = true;
+            var rb = others[0].attachedRigidbody;
+            _frictionVelocity = rb == null ? Vector3.zero : rb.velocity;
         }
         else
         {
-            HandleAirborneMovement();
-        }
-
-        // send input and other state parameters to the animator
-        if (m_IsGrounded && Time.deltaTime > 0)
-        {
-            Vector3 v = transform.forward * m_ForwardAmount * moveSpeedMultiplier;
-            v.y = m_Rigidbody.velocity.y;
-            m_Rigidbody.velocity = v;
+            Grounded = false;
+            _frictionVelocity = Vector3.zero;
         }
     }
 
-    void HandleAirborneMovement()
+    private void Movement(Vector2 move, bool sprint)
     {
-        // apply extra gravity from multiplier:
-        Vector3 extraGravityForce = (Physics.gravity * gravityMultiplier) - Physics.gravity;
-        m_Rigidbody.AddForce(extraGravityForce);
-    }
+        // set target speed based on move speed, sprint speed and if sprint is pressed
+        float targetSpeed = sprint ? SprintSpeed : MoveSpeed;
 
+        // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
-    void HandleGroundedMovement(bool jump)
-    {
-        // check whether conditions are right to allow a jump:
-        if (jump)
+        // note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
+        // if there is no input, set the target speed to 0
+        if (move == Vector2.zero) targetSpeed = 0.0f;
+
+        // a reference to the players current horizontal velocity
+        float currentHorizontalSpeed = new Vector3(_controller.velocity.x - _frictionVelocity.x, 0.0f, _controller.velocity.z - _frictionVelocity.z).magnitude;
+
+        float speedOffset = 0.1f;
+        float inputMagnitude = move.magnitude;
+
+        // accelerate or decelerate to target speed
+        if (currentHorizontalSpeed < targetSpeed - speedOffset || currentHorizontalSpeed > targetSpeed + speedOffset)
         {
-            // jump!
-            m_Rigidbody.velocity = new Vector3(m_Rigidbody.velocity.x, jumpPower, m_Rigidbody.velocity.z);
-            m_IsGrounded = false;
-            groundCheckDistance = 0.1f;
-        }
-    }
+            // creates curved result rather than a linear one giving a more organic speed change
+            // note T in Lerp is clamped, so we don't need to clamp our speed
+            _speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, Time.deltaTime * SpeedChangeRate);
 
-    void ApplyExtraTurnRotation()
-    {
-        // help the character turn faster (this is in addition to root rotation in the animation)
-        float turnSpeed = Mathf.Lerp(stationaryTurnSpeed, movingTurnSpeed, m_ForwardAmount);
-        transform.Rotate(0, m_TurnAmount * turnSpeed * Time.deltaTime, 0);
-    }
-
-    void CheckGroundStatus()
-    {
-        RaycastHit hitInfo;
-#if UNITY_EDITOR
-        // helper to visualise the ground check ray in the scene view
-        Debug.DrawLine(transform.position + (Vector3.up * 0.1f), transform.position + (Vector3.up * 0.1f) + (Vector3.down * groundCheckDistance));
-#endif
-        // 0.1f is a small offset to start the ray from inside the character
-        // it is also good to note that the transform position in the sample assets is at the base of the character
-        if (Physics.Raycast(transform.position + (Vector3.up * 0.1f), Vector3.down, out hitInfo, groundCheckDistance))
-        {
-            m_GroundNormal = hitInfo.normal;
-            m_IsGrounded = true;
+            // round speed to 3 decimal places
+            _speed = Mathf.Round(_speed * 1000f) / 1000f;
         }
         else
         {
-            m_IsGrounded = false;
-            m_GroundNormal = Vector3.up;
+            _speed = targetSpeed;
         }
+
+        // normalise input direction
+        Vector3 inputDirection = new Vector3(move.x, 0.0f, move.y).normalized;
+
+        // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
+        // if there is a move input rotate player when the player is moving
+        if (move != Vector2.zero)
+        {
+            _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg;
+            float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity, RotationSmoothTime);
+
+            // rotate to face input direction relative to camera position
+            transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
+        }
+
+
+        Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
+        Vector3 velocity = targetDirection.normalized * _speed + new Vector3(0.0f, _verticalVelocity, 0.0f) + _frictionVelocity;
+
+        // move the player
+        _controller.Move(velocity * Time.deltaTime);
+    }
+
+    private void JumpAndGravity(bool jump)
+    {
+        if (Grounded)
+        {
+            // reset the fall timeout timer
+            _fallTimeoutDelta = FallTimeout;
+
+            // stop our velocity dropping infinitely when grounded
+            if (_verticalVelocity < 0.0f)
+            {
+                _verticalVelocity = -2f;
+            }
+
+            // Jump
+            if (jump && _jumpTimeoutDelta <= 0.0f)
+            {
+                // the square root of H * -2 * G = how much velocity needed to reach desired height
+                _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
+            }
+
+            // jump timeout
+            if (_jumpTimeoutDelta >= 0.0f)
+            {
+                _jumpTimeoutDelta -= Time.deltaTime;
+            }
+        }
+        else
+        {
+            // reset the jump timeout timer
+            _jumpTimeoutDelta = JumpTimeout;
+
+            // fall timeout
+            if (_fallTimeoutDelta >= 0.0f)
+            {
+                _fallTimeoutDelta -= Time.deltaTime;
+            }
+        }
+
+        // apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)
+        if (_verticalVelocity < _terminalVelocity)
+        {
+            _verticalVelocity += Gravity * Time.deltaTime;
+        }
+    }
+
+    private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
+    {
+        if (lfAngle < -360f) lfAngle += 360f;
+        if (lfAngle > 360f) lfAngle -= 360f;
+        return Mathf.Clamp(lfAngle, lfMin, lfMax);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
+        Color transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f);
+
+        if (Grounded) Gizmos.color = transparentGreen;
+        else Gizmos.color = transparentRed;
+
+        // when selected, draw a gizmo in the position of, and matching radius of, the grounded collider
+        Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
     }
 }

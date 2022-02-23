@@ -12,6 +12,8 @@ public class StraightToTargetAI : MonoBehaviour
     void Update()
     {
         if (target != null)
-            controller.Move(target.position - transform.position, false);
+            controller.Move(target.position - transform.position, false, false);
+        else
+            controller.Move(Vector2.zero, false, false);
     }
 }
