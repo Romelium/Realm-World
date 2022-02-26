@@ -511,15 +511,15 @@ MonoBehaviour:
   target: {fileID: 651306007}
   parent: {fileID: 1731081181}
   Mobs:
-  - mob: {fileID: 0}
-    chance: 0
-    heightCutOff: 0
-    allowedSteepness: 0
+  - mob: {fileID: 1311290861401530, guid: 312b31977ed9b2d48a14849ebb8c7fb3, type: 3}
+    chance: 0.1
+    heightCutOff: 121
+    allowedSteepness: 0.5
   radius: 25
   thinkness: 100
   offset: {x: 0, y: 10, z: 0}
   groundDistance: 10
-  spawnTime: 1
+  spawnTime: 0.2
   quality: 10
 --- !u!1001 &1762682258
 PrefabInstance:
