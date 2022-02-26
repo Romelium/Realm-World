@@ -1,10 +1,11 @@
+using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.Events;
 
 [RequireComponent(typeof(CharacterController))]
 public class Controller : MonoBehaviour
 {
-    [Header("Player")]
+    [Header("Movement")]
     [Tooltip("Move speed of the character in m/s")]
     public float MoveSpeed = 2.0f;
     [Tooltip("Sprint speed of the character in m/s")]
@@ -27,7 +28,7 @@ public class Controller : MonoBehaviour
     [Tooltip("Time required to pass before entering the fall state. Useful for walking down stairs")]
     public float FallTimeout = 0.15f;
 
-    [Header("Player Grounded")]
+    [Header("Grounded")]
     [Tooltip("If the character is grounded or not. Not part of the CharacterController built in grounded check")]
     public bool Grounded = true;
     [Tooltip("Useful for rough ground")]
@@ -36,6 +37,12 @@ public class Controller : MonoBehaviour
     public float GroundedRadius = 0.28f;
     [Tooltip("What layers the character uses as ground")]
     public LayerMask GroundLayers;
+    [Header("Animation")]
+    public string SpeedParamName = "Speed";
+    public string GroundedParamName = "Grounded";
+    public string JumpParamName = "Jump";
+    public string FreeFallParamName = "FreeFall";
+    public string MotionSpeedParamName = "MotionSpeed";
 
     // player
     private float _speed;
@@ -50,25 +57,55 @@ public class Controller : MonoBehaviour
     private float _fallTimeoutDelta;
 
     private CharacterController _controller;
+    private Animator _animator;
+    private bool _hasAnimator;
+    private float _animationBlend;
+    private int _animIDSpeed;
+    private int _animIDGrounded;
+    private int _animIDJump;
+    private int _animIDFreeFall;
+    private int _animIDMotionSpeed;
+    private HashSet<int> _validParameters = new HashSet<int>();
 
     private void Start()
     {
+        _hasAnimator = TryGetComponent(out _animator);
         _controller = GetComponent<CharacterController>();
+
+        if (_hasAnimator)
+            AnimationInit();
 
         // reset our timeouts on start
         _jumpTimeoutDelta = JumpTimeout;
         _fallTimeoutDelta = FallTimeout;
     }
-    public void Update()
+    void Update()
     {
+        AnimationInit();
+    }
 
+    private void AnimationInit()
+    {
+        _animIDSpeed = Animator.StringToHash(SpeedParamName);
+        _animIDGrounded = Animator.StringToHash(GroundedParamName);
+        _animIDJump = Animator.StringToHash(JumpParamName);
+        _animIDFreeFall = Animator.StringToHash(FreeFallParamName);
+        _animIDMotionSpeed = Animator.StringToHash(MotionSpeedParamName);
+        for (int i = 0; i < _animator.parameters.Length; i++)
+        {
+            _validParameters.Add(_animator.parameters[i].nameHash);
+        }
     }
 
     public void Move(Vector3 move, bool sprint, bool jump)
     {
+        Move(new Vector2(move.x, move.z), sprint, jump);
+    }
+    public void Move(Vector2 move, bool sprint, bool jump)
+    {
         JumpAndGravity(jump);
         GroundedCheck();
-        Movement(new Vector2(move.x, move.z), sprint);
+        Movement(move, sprint);
     }
 
     private void GroundedCheck()
@@ -86,6 +123,12 @@ public class Controller : MonoBehaviour
         {
             Grounded = false;
             _frictionVelocity = Vector3.zero;
+        }
+
+        // update animator if using character
+        if (_hasAnimator && _validParameters.Contains(_animIDGrounded))
+        {
+            _animator.SetBool(_animIDGrounded, Grounded);
         }
     }
 
@@ -141,6 +184,18 @@ public class Controller : MonoBehaviour
 
         // move the player
         _controller.Move(velocity * Time.deltaTime);
+
+        // update animator if using character
+        if (_hasAnimator)
+        {
+            if (_validParameters.Contains(_animIDSpeed))
+            {
+                _animationBlend = Mathf.Lerp(_animationBlend, targetSpeed, Time.deltaTime * SpeedChangeRate);
+                _animator.SetFloat(_animIDSpeed, _animationBlend);
+            }
+            if (_validParameters.Contains(_animIDMotionSpeed))
+                _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
+        }
     }
 
     private void JumpAndGravity(bool jump)
@@ -161,12 +216,27 @@ public class Controller : MonoBehaviour
             {
                 // the square root of H * -2 * G = how much velocity needed to reach desired height
                 _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
+
+                // update animator if using character
+                if (_hasAnimator && _validParameters.Contains(_animIDJump))
+                {
+                    _animator.SetBool(_animIDJump, true);
+                }
             }
+            else if (_hasAnimator && _validParameters.Contains(_animIDJump))
+                // update animator if using character
+                _animator.SetBool(_animIDJump, false);
 
             // jump timeout
             if (_jumpTimeoutDelta >= 0.0f)
             {
                 _jumpTimeoutDelta -= Time.deltaTime;
+            }
+
+            // update animator if using character
+            if (_hasAnimator && _validParameters.Contains(_animIDJump))
+            {
+                _animator.SetBool(_animIDFreeFall, false);
             }
         }
         else
@@ -179,6 +249,9 @@ public class Controller : MonoBehaviour
             {
                 _fallTimeoutDelta -= Time.deltaTime;
             }
+            else if (_hasAnimator && _validParameters.Contains(_animIDJump))
+                // update animator if using character
+                _animator.SetBool(_animIDFreeFall, true);
         }
 
         // apply gravity over time if under terminal (multiply by delta time twice to linearly speed up over time)
