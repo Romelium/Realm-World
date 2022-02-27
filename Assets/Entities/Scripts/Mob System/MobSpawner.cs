@@ -8,7 +8,7 @@ public class MobSpawner : MonoBehaviour
     public Transform parent;
     public Mob[] Mobs;
     [Tooltip("Play with it!")]
-    public int radius = 25;
+    public int radius = 10;
     [Tooltip("Play with it!")]
     public int thinkness = 100;
     [Tooltip("Play with it!")]

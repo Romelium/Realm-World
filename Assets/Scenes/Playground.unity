@@ -15,7 +15,7 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
   m_Fog: 1
-  m_FogColor: {r: 0.4862745, g: 0.69411767, b: 0.8117647, a: 1}
+  m_FogColor: {r: 0.47450984, g: 0.6313726, b: 0.64705884, a: 1}
   m_FogMode: 1
   m_FogDensity: 0.01
   m_LinearFogStart: 0
@@ -513,6 +513,10 @@ MonoBehaviour:
   Mobs:
   - mob: {fileID: 1311290861401530, guid: 312b31977ed9b2d48a14849ebb8c7fb3, type: 3}
     chance: 0.1
+    heightCutOff: 121
+    allowedSteepness: 0.5
+  - mob: {fileID: 2066896392038628118, guid: 45288819fde2143449a96207b14db0bb, type: 3}
+    chance: 0.05
     heightCutOff: 121
     allowedSteepness: 0.5
   radius: 25
